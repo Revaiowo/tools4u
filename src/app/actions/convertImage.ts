@@ -37,7 +37,7 @@ export async function convertImage(
         error: "No conversion mode selected",
       };
 
-    await new Promise((res) => setTimeout(res, 3000));
+    // await new Promise((res) => setTimeout(res, 3000));
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
