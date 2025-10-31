@@ -25,7 +25,7 @@ function Header() {
           <Hammer size={30} />
         </div>
         <div className="text-3xl font-semibold text-white">
-          Tools<span className="text-amber-300">4</span>U
+          Tools<span className="text-amber-300">4</span>You
         </div>
       </div>
 
@@ -56,7 +56,7 @@ function Header() {
             onClick={() => scrollToSection("why-tools4u")}
             className="hover:text-amber-300 cursor-pointer"
           >
-            Why Tools4U
+            Why Tools4You
           </div>
           <div
             onClick={() => scrollToSection("services")}
@@ -74,7 +74,7 @@ function Header() {
       )}
 
       {/* Links for desktop */}
-      <nav className="hidden sm:flex gap-6 font-medium text-xl text-white">
+      <nav className="hidden sm:flex gap-8 font-medium text-xl text-white">
         <div
           onClick={() => scrollToSection("home")}
           className="hover:text-amber-300 cursor-pointer transition-colors"
@@ -85,7 +85,7 @@ function Header() {
           onClick={() => scrollToSection("why-tools4u")}
           className="hover:text-amber-300 cursor-pointer transition-colors"
         >
-          Why Tools4U
+          Why Tools4You
         </div>
         <div
           onClick={() => scrollToSection("services")}

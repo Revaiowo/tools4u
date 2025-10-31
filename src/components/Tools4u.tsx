@@ -1,8 +1,8 @@
 function Tools4u() {
   return (
     <section id="why-tools4u" className="mt-20 text-center px-6 md:px-20">
-      <h2 className="text-4xl md:text-5xl font-bold text-amber-300 mb-6">
-        Why Tools4U?
+      <h2 className="text-4xl md:text-5xl font-bold mb-6">
+        Why Tools<span className="text-amber-300">4</span>You?
       </h2>
 
       <p className="text-gray-300 text-lg md:text-xl max-w-3xl mx-auto mb-12">

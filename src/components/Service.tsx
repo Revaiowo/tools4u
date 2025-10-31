@@ -9,7 +9,7 @@ function Service() {
 
       <p className="text-gray-300 text-lg md:text-xl max-w-3xl mx-auto mb-12">
         Explore a wide range of easy-to-use tools designed to make your digital
-        life simpler. From image converters to document tools. Tools4U has
+        life simpler. From image converters to document tools. Tools4You has
         everything you need.
       </p>
 

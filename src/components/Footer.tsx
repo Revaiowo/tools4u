@@ -10,7 +10,7 @@ function Footer() {
         {/* Brand Section */}
         <div className="flex flex-col items-center md:items-start text-center md:text-left">
           <h2 className="text-3xl font-bold text-white">
-            Tools<span className="text-amber-300">4</span>U
+            Tools<span className="text-amber-300">4</span>You
           </h2>
           <p className="mt-2 text-gray-400 text-sm max-w-sm">
             Smart, simple, and secure tools to help you convert, create, and
@@ -45,7 +45,7 @@ function Footer() {
                 href="#why-tools4u"
                 className="hover:text-amber-300 transition-colors duration-300"
               >
-                Why Tools4U
+                Why Tools4You
               </a>
             </li>
             <li>
@@ -96,13 +96,13 @@ function Footer() {
               <Mail size={22} />
             </a>
           </div>
-          <p className="text-sm text-gray-500">contact@tools4u.com</p>
+          <p className="text-sm text-gray-500">contact@tools4you.com</p>
         </div>
       </div>
 
       {/* Bottom Line */}
       <div className="border-t border-amber-300/20 mt-10 pt-6 text-center text-gray-500 text-sm">
-        © {new Date().getFullYear()} Tools4U. All rights reserved.
+        © {new Date().getFullYear()} Tools4You. All rights reserved.
       </div>
     </footer>
   );
