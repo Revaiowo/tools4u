@@ -2,6 +2,8 @@
 
 import sharp from "sharp";
 import { PDFDocument } from "pdf-lib";
+import JSZip from "jszip";
+import * as cheerio from "cheerio";
 
 export type ConversionState = {
   success: boolean;
@@ -171,6 +173,87 @@ export async function convertImage(
         outputBuffer = Buffer.from(textPdfBytes);
         outputFormat = "pdf";
         mimeType = "application/pdf";
+        break;
+
+      // ===== EPUB OPERATIONS =====
+      case "epub-spacing":
+        try {
+          // Load the EPUB file as a zip
+          const zip = await JSZip.loadAsync(buffer);
+
+          // Find and process HTML files
+          const htmlFiles: JSZip.JSZipObject[] = [];
+          zip.forEach((relativePath, zipEntry) => {
+            if (
+              relativePath.endsWith(".html") ||
+              relativePath.endsWith(".xhtml")
+            ) {
+              htmlFiles.push(zipEntry);
+            }
+          });
+
+          // Process each HTML file
+          for (const htmlFile of htmlFiles) {
+            const content = await htmlFile.async("text");
+            const $ = cheerio.load(content, {
+              xmlMode: true,
+              // decodeEntities: false,
+            });
+
+            // Add spacing after paragraphs while preserving existing styles
+            $("p").each((_, elem) => {
+              const $elem = $(elem);
+              const currentStyle = $elem.attr("style") || "";
+
+              if (!currentStyle.includes("margin-bottom")) {
+                const newStyle =
+                  currentStyle +
+                  (currentStyle ? "; " : "") +
+                  "margin-bottom: 1em;";
+                $elem.attr("style", newStyle);
+              }
+            });
+
+            // Preserve image elements and their formatting
+            $("img").each((_, elem) => {
+              const $elem = $(elem);
+              const currentStyle = $elem.attr("style") || "";
+              if (!currentStyle.includes("display")) {
+                $elem.attr(
+                  "style",
+                  currentStyle + (currentStyle ? "; " : "") + "display: block;"
+                );
+              }
+            });
+
+            // Update the content in the zip
+            const updatedContent = $.html();
+            zip.file(htmlFile.name, updatedContent);
+          }
+
+          // Generate the modified EPUB
+          const modifiedEpub = await zip.generateAsync({
+            type: "nodebuffer",
+            compression: "DEFLATE",
+            compressionOptions: {
+              level: 9,
+            },
+          });
+
+          outputBuffer = Buffer.from(modifiedEpub);
+          outputFormat = "epub";
+          mimeType = "application/epub+zip";
+        } catch (epubError) {
+          console.error("EPUB processing error:", epubError);
+          return {
+            success: false,
+            message: "Failed to process EPUB file",
+            error:
+              epubError instanceof Error
+                ? epubError.message
+                : "Unknown EPUB error",
+          };
+        }
         break;
 
       default:

@@ -41,6 +41,13 @@ export const conversionModes = [
     ],
   },
   {
+    category: "EPUB Operations",
+    icon: "📚",
+    modes: [
+      { value: "epub-spacing", label: "Add Paragraph Spacing", from: "epub" },
+    ],
+  },
+  {
     category: "Text Operations",
     icon: "📝",
     modes: [{ value: "txt-pdf", label: "Text → PDF", from: "txt" }],
