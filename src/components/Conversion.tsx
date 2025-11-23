@@ -7,7 +7,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { Cog, Download, Loader2 } from "lucide-react";
+import { Cog, Download, Loader2, File as FileIcon } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -16,42 +16,60 @@ import {
   SelectValue,
 } from "./ui/select";
 import { convertImage, ConversionState } from "@/app/actions/convertImage";
+import { conversionModes } from "@/lib/utils";
 
-function Conversion({
-  files,
-  setFiles,
-}: {
+interface ConversionProps {
   files: File[];
-  setFiles: React.Dispatch<React.SetStateAction<File[]>>;
-}) {
-  const [state, formAction, isPending] = useActionState<
-    ConversionState | null,
-    FormData
-  >(convertImage, null);
+  state: ConversionState | null;
+  formAction: (formData: FormData) => void;
+  isPending: boolean;
+  showResult: boolean;
+  setShowResult: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const Conversion: React.FC<ConversionProps> = ({
+  files,
+  state,
+  formAction,
+  isPending,
+  showResult,
+  setShowResult,
+}) => {
   const formRef = useRef<HTMLFormElement>(null);
   const [localMode, setLocalMode] = useState<string>("");
-  const [currentFiles, setCurrentFiles] = useState<File[]>([]);
-  const [showResult, setShowResult] = useState(false);
+  const [fileExtension, setFileExtension] = useState<string>("");
 
-  // Reset state when new files are uploaded
+  // Get file extension and reset state when new files are uploaded
   useEffect(() => {
-    console.log(1);
-    if (
-      files.length > 0
-      // JSON.stringify(files) !== JSON.stringify(currentFiles)
-    ) {
-      setCurrentFiles(files);
+    if (files.length > 0) {
+      const ext = files[0].name.split(".").pop()?.toLowerCase() || "";
+      setFileExtension(ext);
       setLocalMode("");
-      setShowResult(false); // Hide previous results
+      setShowResult(false);
     }
-  }, [files, currentFiles]);
+  }, [files]);
+
+  // Filter conversion modes based on file extension
+  const getFilteredModes = () => {
+    return conversionModes
+      .map((category) => ({
+        ...category,
+        modes: category.modes.filter((mode) => {
+          // Show modes that match the file extension or are generic (like 'image')
+          return mode.from === fileExtension || mode.from === "image";
+        }),
+      }))
+      .filter((category) => category.modes.length > 0); // Remove empty categories
+  };
+
+  const filteredModes = getFilteredModes();
 
   // Show result when state changes after conversion
   useEffect(() => {
-    if (state !== null) {
+    if (state !== null && !isPending) {
       setShowResult(true);
     }
-  }, [state]);
+  }, [state, isPending]);
 
   const handleModeChange = (value: string) => {
     setLocalMode(value);
@@ -72,7 +90,7 @@ function Conversion({
 
     // Create FormData and submit within transition
     const formData = new FormData();
-    formData.append("file", files[0]); // For now, converting first file only
+    formData.append("file", files[0]);
     formData.append("mode", localMode);
 
     startTransition(() => {
@@ -80,132 +98,98 @@ function Conversion({
     });
   };
 
-  const handleDownload = () => {
-    if (!state?.convertedImage) return;
-
-    const { data, filename, mimeType } = state.convertedImage;
-    const byteCharacters = atob(data);
-    const byteNumbers = new Array(byteCharacters.length);
-
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
   return (
-    <>
+    <div className="w-full flex flex-col items-center gap-6">
       {!showResult && (
-        <form ref={formRef} onSubmit={handleConvert} className="contents">
-          <div className="flex flex-col gap-5 md:flex-row md:w-180 md:justify-between items-center">
-            {/* File list preview */}
-            {files.length > 0 && (
-              <div className="text-gray-200 md:text-lg text-center">
-                <p className="font-semibold mb-2">Selected files:</p>
-                <ul className="list-disc list-inside text-gray-400">
-                  {files.map((file, index) => (
-                    <li key={index}>
-                      {file.name} ({(file.size / 1024).toFixed(2)} KB)
-                    </li>
-                  ))}
-                </ul>
+        <form
+          ref={formRef}
+          onSubmit={handleConvert}
+          className="w-full px-6 md:px-0 max-w-2xl flex flex-col items-center gap-6"
+        >
+          {/* File preview */}
+          {files.length > 0 && (
+            <div className="w-full bg-linear-to-br from-gray-900/80 to-gray-800/80 border-2 border-amber-400/30 rounded-xl p-6 backdrop-blur-sm shadow-xl">
+              <div className="flex items-center gap-3 mb-4">
+                <FileIcon className="text-amber-400" size={24} />
+                <h3 className="text-xl font-semibold text-amber-200">
+                  Selected File
+                </h3>
               </div>
-            )}
+              <div className="bg-gray-950/50 rounded-lg p-4 border border-amber-400/20">
+                <p className="text-gray-200 font-medium text-lg truncate">
+                  {files[0].name}
+                </p>
+                <p className="text-gray-400 text-sm mt-1">
+                  Size: {(files[0].size / 1024).toFixed(2)} KB
+                </p>
+              </div>
+            </div>
+          )}
 
-            {/* Mode Selection */}
-            {files.length > 0 && (
-              <div className="md:w-60 md:self-start">
-                <h2 className="md:text-2xl font-semibold text-center text-amber-200 mb-2">
-                  Choose a Conversion Mode
-                </h2>
-                <Select onValueChange={handleModeChange} value={localMode}>
-                  <SelectTrigger className="w-full bg-gray-900 text-yellow-200 border border-yellow-400">
-                    <SelectValue placeholder="Select mode..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-900 text-yellow-100 border border-yellow-400">
-                    <SelectItem value="png-jpg">PNG → JPG</SelectItem>
-                    <SelectItem value="jpg-png">JPG → PNG</SelectItem>
-                    <SelectItem value="compress-img">Compress Image</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
+          {/* Mode Selection */}
+          {files.length > 0 && (
+            <div className="w-full bg-linear-to-br from-gray-900/80 to-gray-800/80 border-2 border-amber-400/30 rounded-xl p-6 backdrop-blur-sm shadow-xl ">
+              <h2 className="text-2xl font-bold text-start text-amber-200 mb-4 flex items-center  gap-2">
+                <Cog className="text-amber-400" size={28} />
+                Conversion Mode
+              </h2>
+              <Select onValueChange={handleModeChange} value={localMode}>
+                <SelectTrigger className="w-full h-12 bg-gray-950/70 text-amber-100 border-2 border-amber-400/50 hover:border-amber-400 transition-colors text-lg font-medium">
+                  <SelectValue placeholder="Select conversion type..." />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900 text-amber-100 border-2 border-amber-400 max-h-96 overflow-y-auto">
+                  {filteredModes.length > 0 ? (
+                    filteredModes.map((category) => (
+                      <div key={category.category}>
+                        <div className="px-3 py-2 text-sm font-bold text-amber-300 bg-gray-800 sticky top-0 flex items-center gap-2 z-10">
+                          <span>{category.icon}</span>
+                          <span>{category.category}</span>
+                        </div>
+                        {category.modes.map((mode) => (
+                          <SelectItem
+                            key={mode.value}
+                            value={mode.value}
+                            className="text-base py-3 cursor-pointer hover:bg-amber-500/10 focus:bg-amber-500/20 focus:text-amber-200"
+                          >
+                            {mode.label}
+                          </SelectItem>
+                        ))}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-4 py-8 text-center text-gray-400">
+                      <p>No conversions available for .{fileExtension} files</p>
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Conversion button */}
-          {files.length > 0 && (
+          {files.length > 0 && localMode && (
             <button
               type="submit"
-              disabled={isPending || !localMode}
-              className="text-2xl mt-2 font-semibold p-3 bg-red-500 text-foreground transition-all duration-300 hover:bg-red-600 rounded-xs flex items-center gap-2 hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isPending}
+              className="w-full max-w-md h-16 text-2xl font-bold bg-linear-to-r from-red-500 via-red-600 to-red-500 text-white transition-all duration-300 hover:from-red-600 hover:via-red-700 hover:to-red-600 rounded-xl flex items-center justify-center gap-3 shadow-[0_0_30px_-5px_rgba(239,68,68,0.5)] hover:shadow-[0_0_40px_-5px_rgba(239,68,68,0.7)] disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
             >
               {isPending ? (
                 <>
-                  <Cog size={40} className="animate-spin" />
+                  <Loader2 size={32} className="animate-spin" />
                   <span>Converting...</span>
                 </>
               ) : (
                 <>
-                  <Cog size={40} />
-                  <span>Convert</span>
+                  <Cog size={32} />
+                  <span>Convert Now</span>
                 </>
               )}
             </button>
           )}
         </form>
       )}
-
-      {/* Conversion result */}
-      {showResult && state && (
-        <div className="mt-6 p-4 rounded-lg border-2 border-yellow-400 bg-gray-900/50">
-          {state.success ? (
-            <div className="flex flex-col items-center gap-4">
-              <p className="text-green-400 text-lg font-semibold">
-                ✓ {state.message}
-              </p>
-              {state.convertedImage && (
-                <>
-                  <div className="text-gray-300">
-                    <p className="font-semibold mb-2">Converted file:</p>
-                    <p className="text-gray-400">
-                      {state.convertedImage.filename}
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleDownload}
-                    className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-all duration-300 hover:cursor-pointer"
-                  >
-                    <Download size={24} />
-                    <span>Download Converted Image</span>
-                  </button>
-                </>
-              )}
-            </div>
-          ) : (
-            <div className="text-center">
-              <p className="text-red-400 text-lg font-semibold">
-                ✗ {state.message}
-              </p>
-              {state.error && (
-                <p className="text-gray-400 text-sm mt-2">{state.error}</p>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-    </>
+    </div>
   );
-}
+};
 
 export default Conversion;

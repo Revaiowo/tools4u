@@ -1,12 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useActionState, useRef, useState } from "react";
 import { Button } from "./ui/button";
 import Conversion from "./Conversion";
+import DownloadFile from "./DownloadFile";
+import { convertImage, ConversionState } from "@/app/actions/convertImage";
 
 function FileUpload() {
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+
+  const [state, formAction, isPending] = useActionState<
+    ConversionState | null,
+    FormData
+  >(convertImage, null);
+  const [showResult, setShowResult] = useState(false);
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -84,7 +92,15 @@ function FileUpload() {
       </label>
 
       {/* File preview and conversion mode */}
-      <Conversion files={files} setFiles={setFiles} />
+      <Conversion
+        files={files}
+        state={state}
+        formAction={formAction}
+        isPending={isPending}
+        showResult={showResult}
+        setShowResult={setShowResult}
+      />
+      <DownloadFile state={state} showResult={showResult} />
     </>
   );
 }
