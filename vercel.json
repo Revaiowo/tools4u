@@ -1,11 +1,6 @@
 {
-  "env": {
-    "NEXT_PUBLIC_VERCEL_ENV": "@vercel/env-next-public-vercel-env"
-  },
-  "serverlessFunctionRegion": "sfo1",
   "functions": {
     "src/app/actions/*.ts": {
-      "memory": 3008,
       "maxDuration": 60
     }
   }
